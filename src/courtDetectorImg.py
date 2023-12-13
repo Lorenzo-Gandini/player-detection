@@ -1,16 +1,8 @@
-import cv2
-import numpy as np
+
+from utils import *
 
 # Leggi l'immagine
 image = cv2.imread('data/img/frame.png')
-original = image.copy()
-
-# Parametri
-lower_green = np.array([30, 30, 30]) # Valori minimi di H, S, V per il verde
-upper_green = np.array([70, 255, 255]) # Valori massimi di H, S, V per il verde
-blur_kernel = (15, 15) #Kernel da applicare per il denoising
-erosion_kernel = np.ones((7, 7), np.uint8) #kernel da applicare per l'erosione
-dilatation_kernel = np.ones((13, 13), np.uint8) #Kernel da applciare per la dilatazione
 
 # Converte l'immagine in formato HSV così da poter analizzare il canale h
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -44,6 +36,5 @@ for cnt in contours:
 
 # Visualizza l'immagine risultante
 cv2.imwrite('results/img/court-in-frame.png', image)
-cv2.imshow("Campo da calcio", image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
