@@ -5,3 +5,4 @@ opencv-python
 ipykernel
 common
 imutils
+scipy
