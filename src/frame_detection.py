@@ -1,6 +1,11 @@
+print("\n + RUNNING : Detection of players in court.")
 from utils  import *
 
 def get_roi(image):
+    '''
+    Defines the Region Of Interest in the frame. This is defined by the court area, defined as the biggest green area detected 
+    '''
+
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     green_mask = cv2.inRange(hsv, lower_green, upper_green)
 
@@ -38,6 +43,10 @@ def get_roi(image):
     return roi
 
 def remove_court(image):
+    '''
+    Remove the court in the image, in order to simplify the player detection.
+    '''
+
     denoised_image = cv2.GaussianBlur(image, (5, 5), 0)
     hsv = cv2.cvtColor(denoised_image, cv2.COLOR_BGR2HSV)
     green_mask = cv2.inRange(hsv, lower_green, upper_green)
@@ -46,7 +55,10 @@ def remove_court(image):
 
     return res
 
-def detect_people(image, orignal):
+def detect_people(image, original):
+    '''
+    Pedestrian detection with HOG. Return coordinates of squares where should be located people in the court.
+    '''
     print("I'm in detect_people \n")
     start_time = time.time()
 
@@ -66,18 +78,27 @@ def detect_people(image, orignal):
     for (xA, yA, xB, yB) in pick:
         print("I'm in the for")
         roi = image[yA:yB, xA:xB]
-        player_color, bbox_color = analyze_color_statistics(roi)
-        cv2.rectangle(original, (xA, yA), (xB, yB), bbox_color, 2)
-        cv2.imshow("result", original)
+        bbox_color = analyze_color_statistics(roi)
 
-    #tell me the time of HOG
+        # Assicurati che bbox_color sia una tupla di tre elementi (B, G, R)
+        if isinstance(bbox_color, tuple) and len(bbox_color) == 3:
+            cv2.rectangle(original, (xA, yA), (xB, yB), bbox_color, 2)
+        else:
+            print("Colore del bounding box non valido")
+
+
+    cv2.imwrite("results/img/colored-bbox-v1.jpg", original)
+
+    #tell me the time of HOG. To remove in product
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Tempo impiegato: {elapsed_time} secondi")
 
-    cv2.imshow("Detected", image)
-
 def classify_color(color):
+    '''
+    Classify the color given the hsv values. Need to be changed with other colors if we change the video.
+    '''
+
     print(f"Classify color : {color}")
     h, s, v = color
 
@@ -89,9 +110,16 @@ def classify_color(color):
         return 'non specificato', (255, 255, 255)
 
 def euclidean_distance(color1, color2):
+    '''
+    Return the distance between two colors (the standard color and the color that is inside the bounding box). The nearest color is the one assigned
+    '''
+
     return np.sqrt(np.sum((color1 - color2) ** 2))
 
 def classify_color_euclidean(rgb_color):
+    '''
+    Classify the color of the bounding box with the comparison between the color inside the bounding box and the standard ones
+    '''
     # Definisci i colori standard RGB per giallo e rosso
     yellow_standard = np.array([255, 255, 0])
     red_standard = np.array([255, 0, 0])
@@ -109,6 +137,10 @@ def classify_color_euclidean(rgb_color):
         return 'non specificato', (255, 255, 255)
 
 def find_prevalent_color(avg_color, med_color, mod_color):
+    '''
+    Define the prevalent color of bounding box. Given average colour, median colour and moda.
+    If 2 of this 3 variables has the same colour, so it's defined as the prevalent colour. 
+    '''
     # Non è più necessario estrarre il primo elemento; passa l'intero array RGB
     colors = [classify_color_euclidean(avg_color), classify_color_euclidean(med_color), classify_color_euclidean(mod_color)]
     color_count = {}
@@ -124,34 +156,34 @@ def find_prevalent_color(avg_color, med_color, mod_color):
             # Restituisce il nome e il colore BGR del primo colore che appare almeno due volte
             for color in colors:
                 if color[0] == color_name:
-                    print(f"color is : {color_name}")
-                    return color
+                    return color[1]
         else:
-            print(f"color is : white")
-            return 'non specificato', (255, 255, 255) 
+            return (255, 255, 255) 
 
 def analyze_color_statistics(roi, value_threshold=30):
-
-    # Filtra i pixel troppo scuri basandosi sul valore nel canale RGB
+    '''
+    Filtering the darker pixels, extract the colour stats usefull for the analysis.
+    '''
+    # For each RGB channel, filter the darker pixels
     non_black_pixels_mask = (roi[:, :, 0] > value_threshold) & \
                             (roi[:, :, 1] > value_threshold) & \
                             (roi[:, :, 2] > value_threshold)
     filtered_roi = roi[non_black_pixels_mask]
 
-    # Se non ci sono abbastanza pixel, restituisci valori predefiniti
+    # If there are not enough pixels, return standard values
     if filtered_roi.size == 0:
         return [0, 0, 0], [0, 0, 0], [0, 0, 0]
 
-    # Calcola media, mediana e moda per ciascun canale RGB
+    # 
+    # Define average, median and moda for each RGB channel
     average_color = np.mean(filtered_roi.reshape(-1, 3), axis=0)
     median_color = np.median(filtered_roi.reshape(-1, 3), axis=0)
     moda_color = stats.mode(filtered_roi.reshape(-1, 3), axis=0).mode[0]
 
     print(f"Media RGB: {average_color}, Mediana RGB: {median_color}, Moda RGB: {moda_color}")
 
-    color, bbox_color = find_prevalent_color(average_color, median_color, moda_color)
-
-    return color, bbox_color
+    bbox_color = find_prevalent_color(average_color, median_color, moda_color)
+    return bbox_color
 
 roi = get_roi(image)
 black_court = remove_court(roi)
@@ -159,3 +191,6 @@ detect_people(black_court, image)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+print(" + COMPLETE : Detection of players in court.\n")
+print(" - You can find the result image in results/img/colored-bbox-v1.jpg \n")
