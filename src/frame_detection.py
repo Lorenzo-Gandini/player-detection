@@ -19,28 +19,32 @@ def get_roi(image):
     # Define contours of the area
     contours, _ = cv2.findContours(dilatation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    #The treshold is 1/3 in order to remove most of the croud area.
-    threshold_area = 1/3*(image.shape[0]*image.shape[1])
+    # Go for the biggest area finded in the given image
+    max_area = 0
+    max_contour = None
 
     for cnt in contours:
-        if cv2.contourArea(cnt) > threshold_area:
-           
-            # If the area is big enough, create the mask of the image
-            mask = np.zeros(image.shape[:2], dtype=np.uint8)
-            cv2.fillPoly(mask, [cnt], 255)
+        area = cv2.contourArea(cnt)
+        if area > max_area:
+            max_area = area
+            max_contour = cnt
 
-            # Dilatate the mask, in roder to increase the area since some players can be near the line of the field.
-            kernel = np.ones((100, 100), np.uint8) 
-            dilated_mask = cv2.dilate(mask, kernel)
+    if max_contour is not None:  
+        mask = np.zeros(image.shape[:2], dtype=np.uint8)
+        cv2.fillPoly(mask, [max_contour], 255)
 
-            # Since we dilatate the mask, the dimension of the image must be the same
-            mask_resized = cv2.resize(dilated_mask, (image.shape[1], image.shape[0]))
-            if mask_resized.dtype != np.uint8:
-                mask_resized = mask_resized.astype(np.uint8)
+        # Dilatate the mask, in roder to increase the area since some players can be near the line of the field.
+        kernel = np.ones((100, 100), np.uint8) 
+        dilated_mask = cv2.dilate(mask, kernel)
 
-            # Extract the roi from the mask
-            roi = cv2.bitwise_and(image, image, mask=mask_resized)
-    return roi
+        # Since we dilatate the mask, the dimension of the image must be the same
+        mask_resized = cv2.resize(dilated_mask, (image.shape[1], image.shape[0]))
+        if mask_resized.dtype != np.uint8:
+            mask_resized = mask_resized.astype(np.uint8)
+
+        # Extract the roi from the mask
+        roi = cv2.bitwise_and(image, image, mask=mask_resized)
+        return roi
 
 def remove_court(image):
     '''
@@ -59,16 +63,16 @@ def detect_people(image, original):
     '''
     Pedestrian detection with HOG. Return coordinates of squares where should be located people in the court.
     '''
-    print("I'm in detect_people \n")
     start_time = time.time()
 
     # Pre-processing of the image
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+    #Define the HOG Descriptor for pedestrian detection
     hog = cv2.HOGDescriptor(winSize, blockSize, blockStride, cellSize, nbins)
     daimler_detector = cv2.HOGDescriptor_getDaimlerPeopleDetector()
     hog.setSVMDetector(daimler_detector)
-    players, _ = hog.detectMultiScale(gray_image, winStride=(1, 1), padding=(1, 1), scale=1.001) #winstride dispendioso ma più efficace.
+    players, _ = hog.detectMultiScale(gray_image, winStride=(1, 1), padding=(1, 1), scale=1.0001) #winstride dispendioso ma più efficace.
 
     # apply non-maxima suppression to the bounding boxes using a fairly large overlap threshold to try to maintain overlapping boxes that are still people
     players = np.array([[x, y, x + w, y + h] for (x, y, w, h) in players])
@@ -76,7 +80,6 @@ def detect_people(image, original):
 
     # draw the final bounding boxes
     for (xA, yA, xB, yB) in pick:
-        print("I'm in the for")
         roi = image[yA:yB, xA:xB]
         bbox_color = analyze_color_statistics(roi)
 
@@ -102,9 +105,9 @@ def classify_color(color):
     print(f"Classify color : {color}")
     h, s, v = color
 
-    if 10 <= h <= 60 and s > 30 and v > 30:  # Range molto ampliato per Giallo
+    if 5 <= h <= 70 and s > 20 and v > 20:  # Range molto ampliato per Giallo
         return 'giallo', (0, 255, 255)
-    elif (0 <= h <= 25 or 140 <= h <= 180) and s > 30 and v > 30:  # Range molto ampliato per Rosso
+    elif (0 <= h <= 30 or 130 <= h <= 190) and s > 20 and v > 20:  # Range molto ampliato per Rosso
         return 'rosso', (0, 0, 255)
     else:
         return 'non specificato', (255, 255, 255)
@@ -141,7 +144,6 @@ def find_prevalent_color(avg_color, med_color, mod_color):
     Define the prevalent color of bounding box. Given average colour, median colour and moda.
     If 2 of this 3 variables has the same colour, so it's defined as the prevalent colour. 
     '''
-    # Non è più necessario estrarre il primo elemento; passa l'intero array RGB
     colors = [classify_color_euclidean(avg_color), classify_color_euclidean(med_color), classify_color_euclidean(mod_color)]
     color_count = {}
 
@@ -153,7 +155,6 @@ def find_prevalent_color(avg_color, med_color, mod_color):
 
     for color_name, count in color_count.items():
         if count >= 2:
-            # Restituisce il nome e il colore BGR del primo colore che appare almeno due volte
             for color in colors:
                 if color[0] == color_name:
                     return color[1]
@@ -162,7 +163,8 @@ def find_prevalent_color(avg_color, med_color, mod_color):
 
 def analyze_color_statistics(roi, value_threshold=30):
     '''
-    Filtering the darker pixels, extract the colour stats usefull for the analysis.
+    Filtering the darker pixels and extract the colour stats usefull for the analysis.
+    Using average, median and moda, we can avoid errors in defining the color of the box.
     '''
     # For each RGB channel, filter the darker pixels
     non_black_pixels_mask = (roi[:, :, 0] > value_threshold) & \
@@ -174,13 +176,10 @@ def analyze_color_statistics(roi, value_threshold=30):
     if filtered_roi.size == 0:
         return [0, 0, 0], [0, 0, 0], [0, 0, 0]
 
-    # 
     # Define average, median and moda for each RGB channel
     average_color = np.mean(filtered_roi.reshape(-1, 3), axis=0)
     median_color = np.median(filtered_roi.reshape(-1, 3), axis=0)
     moda_color = stats.mode(filtered_roi.reshape(-1, 3), axis=0).mode[0]
-
-    print(f"Media RGB: {average_color}, Mediana RGB: {median_color}, Moda RGB: {moda_color}")
 
     bbox_color = find_prevalent_color(average_color, median_color, moda_color)
     return bbox_color
