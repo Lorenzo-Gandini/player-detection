@@ -1,9 +1,13 @@
-print("\n + RUNNING : Detection of players in court.")
+print("\n + RUNNING : Detection of players from a frame.")
 from utils  import *
 
+players_detected = []
+
+#---- COURT ------#
 def get_roi(image):
     '''
-    Defines the Region Of Interest in the frame. This is defined by the court area, defined as the biggest green area detected 
+    Defines the Region Of Interest in the frame. This is defined by the court area, defined as the biggest green area detected.
+    This operation is usefull in order to reduce the time of HOG 
     '''
 
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -59,6 +63,7 @@ def remove_court(image):
 
     return res
 
+#---- PLAYERS ------#
 def detect_people(image):
     '''
     Pedestrian detection with HOG. Return coordinates of squares where should be located people in the court.
@@ -79,7 +84,7 @@ def detect_people(image):
     
     return pick
 
-def draw_bbox(coords, image, original):
+def save_players(coords, image):
     '''
     Given a sequence of coordinates, draw the bounding box with the team color that is inside the bounding box.
     '''
@@ -88,14 +93,27 @@ def draw_bbox(coords, image, original):
         roi = image[yA:yB, xA:xB]
         bbox_color = analyze_color_statistics(roi)
 
-        # Check if the color is correct
-        if isinstance(bbox_color, tuple) and len(bbox_color) == 3:
-            cv2.rectangle(original, (xA, yA), (xB, yB), bbox_color, 2)
-        else:
-            print("Colore del bounding box non valido")
+        players_detected.append({
+            'x': xA,
+            'y': yA, 
+            'w': xB-xA, 
+            'h': yB-yA,
+            'color': bbox_color
+            })
+        
+        for player in players_detected:
+            player['x'] = int(player['x'])
+            player['y'] = int(player['y'])
+            player['h'] = int(player['h'])
+            player['w'] = int(player['w'])
 
-    cv2.imwrite("results/img/colored-bbox-v2.jpg", original)
+            if isinstance(player['color'], np.ndarray):
+                player['color'] = player['color'].tolist()
 
+    with open('results/json/players_detected.json', 'w') as f:
+        json.dump(players_detected, f)
+
+#--- COLORS -------#
 def classify_color(color):
     '''
     Classify the color given the hsv values. Need to be changed with other colors if we change the video.
@@ -174,13 +192,13 @@ def analyze_color_statistics(roi, value_threshold=30):
     bbox_color = find_prevalent_color(average_color, median_color, moda_color)
     return bbox_color
 
-roi = get_roi(image) 
-court_removed = remove_court(roi)
-coordinates = detect_people(court_removed)
-draw_bounding_box = draw_bbox(coordinates, image, original)
+def analyze_frame(image):
+    roi = get_roi(image) 
+    court_removed = remove_court(roi)
+    coordinates = detect_people(court_removed)
+    save_players(coordinates, image)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-print(" + COMPLETE : Detection of players in court.\n")
-print(" - You can find the result image in results/img/colored-bbox-v1.jpg \n")
+print(" + COMPLETE : Detection of players from a frame.\n")
