@@ -174,13 +174,15 @@ def analyze_color_statistics(roi, value_threshold=30):
     bbox_color = find_prevalent_color(average_color, median_color, moda_color)
     return bbox_color
 
-roi = get_roi(image) 
-court_removed = remove_court(roi)
-coordinates = detect_people(court_removed)
-draw_bounding_box = draw_bbox(coordinates, image, original)
-
+get_roi(image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+roi = get_roi(image) 
+court_removed = remove_court(roi)
+coordinates = detect_people(court_removed, original)
+draw_bounding_box = draw_bbox(coordinates, image, original)
+
 
 print(" + COMPLETE : Detection of players in court.\n")
 print(" - You can find the result image in results/img/colored-bbox-v1.jpg \n")

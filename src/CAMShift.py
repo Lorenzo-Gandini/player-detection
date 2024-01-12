@@ -1,7 +1,11 @@
 print("\n + RUNNING : CAMshift.")
 
 from utils  import *
+<<<<<<< HEAD
 from frameAnalysis import analyze_frame
+=======
+
+>>>>>>> a03aa9985c91a33f649ca1c43e60ab352ab5b796
 
 cap = cv2.VideoCapture(video_path)
 
