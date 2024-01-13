@@ -1,14 +1,16 @@
 import numpy as np
 import cv2
-import imutils
 from imutils.object_detection import non_max_suppression
 from scipy import stats
 import json
+import time
+
 
 original = cv2.imread('data/img/frame.png')
 image = original.copy()
 
 video_path = 'data/video/Bundes short.mp4'
+json_path = 'results/json/players_detected.json'
 
 ## --- START VARIABLES BLOCK ---
 # Green bounds for court removing - HSV values
@@ -31,7 +33,9 @@ blur_kernel = (15, 15) #Kernel da applicare per il denoising
 yellow_standard = np.array([255, 255, 0])
 red_standard = np.array([255, 0, 0])
 
-#----------------- Parameters for CAMShift
+
+
+# ++++ Parameters for CAMShift
 # first interval of red (0-10)
 lower_red1 = np.array([0, 70, 50])
 upper_red1 = np.array([20, 255, 255])
@@ -41,5 +45,5 @@ lower_red2 = np.array([160, 70, 50])
 upper_red2 = np.array([180, 255, 255])
 
 #Yellow interval for mask
-lower_yellow = np.array([5, 20, 20])
-upper_yellow = np.array([70, 255, 255])
+lower_yellow = np.array([20, 100, 100])
+upper_yellow = np.array([30, 255, 255])
