@@ -89,13 +89,14 @@ for obj in detected_objects:
                 print("troppo piccolo")
             else:
                 print("giusto")
-
+            
+            '''
             # Draw it on image
             pts = cv2.boxPoints(ret)
             pts = np.intp(pts)
             img = cv2.polylines(frame,[pts],True, color, 2)
 
-            result.write(img)
+            result.write(img)'''
         else:
             break
     print("\n + COMPLETED.")
