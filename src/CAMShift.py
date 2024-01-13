@@ -1,87 +1,105 @@
-print("\n + RUNNING : CAMshift.")
+'''
+This works for players hardcode 
+'''
 
-from utils  import *
-<<<<<<< HEAD
-from frameAnalysis import analyze_frame
-=======
+from utils import *
 
->>>>>>> a03aa9985c91a33f649ca1c43e60ab352ab5b796
+# Initialize the start time
+start_time = time.time()
+counter_player = 0
 
-cap = cv2.VideoCapture(video_path)
+MIN_AREA = 40 * 80
+MAX_AREA = 75 * 150
 
-# take first frame of the video
-ret,frame = cap.read()
+def extract_file():
+    '''Load the json and extract the values of the bboxes'''
+    try:
+        with open(json_path, 'r') as f:
+            detected_objects = json.load(f)       
+            return detected_objects
 
-# REMOVE IN ANALYSIS 
-# analyze_frame(frame)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Errore nella lettura dei dati: {e}")
 
-#Open the json with the coordinates and the color of each bounding box.
-try:
-    with open('results/json/players_detected.json', 'r') as f:
-        detected_objects = json.load(f)       
+detected_objects = extract_file()
 
-except (FileNotFoundError, json.JSONDecodeError) as e:
-    print(f"Errore nella lettura dei dati: {e}")
-
-#Initialize the lists of tracking windows and histograms
-tracking_windows = []
-histograms = []
-colors = []
 
 for obj in detected_objects:
-
+    video_output = "results/video/tracked-tr30-eps1-blur7/tracked-player"
+    counter_player += 1
+    
+    print("\n + RUNNING :\nPlayer "+str(counter_player))
+    
+    cap = cv2.VideoCapture(video_path)
+    ret,frame = cap.read()
+    
     track_window = (obj['x'], obj['y'], obj['w'], obj['h'])
-    tracking_windows.append(track_window)
-
+    color = obj['color']
     roi = frame[obj['y'] : obj['y'] + obj['h'], obj['x'] : obj['x'] + obj['w']]
+
     hsv_roi =  cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 
-    colors.append(obj['color'])
-    
-    #yellow
-    if obj['color'] == '[0, 255, 255]':
+    #extract the color for the bbox
+    if color == [0, 255, 255]:
+        print('Color : yellow')
         mask = cv2.inRange(hsv_roi, lower_yellow, upper_yellow)
+    elif color == [0, 0, 255] or [255, 255, 255]:
+        print('Color : red')
+        # Mask for red backprojection
+        mask_red1 = cv2.inRange(hsv_roi, lower_red1, upper_red1)
+        mask_red2 = cv2.inRange(hsv_roi, lower_red2, upper_red2)
+        mask = cv2.bitwise_or(mask_red1, mask_red2)
+    else :
+        print('Color : white')
 
-    #red    
-    elif obj['color'] == '[0, 0, 255]':
-        mask1 = cv2.inRange(hsv_roi, lower_red1, upper_red1)
-        mask2 = cv2.inRange(hsv_roi, lower_red2, upper_red2)
-        mask = cv2.bitwise_or(mask1, mask2)
-    
-    else:
-        mask = cv2.inRange(hsv_roi, np.array([0, 0, 0]), np.array([255, 255, 255 ]))
 
-    
-    roi_hist = cv2.calcHist([hsv_roi],[0],mask,[180],[0,180])   
+    roi_hist = cv2.calcHist([hsv_roi],[0],mask,[180],[0,180])
     cv2.normalize(roi_hist,roi_hist,0,255,cv2.NORM_MINMAX)
-    histograms.append(roi_hist)
 
+    # Setup the termination criteria, either 10 iteration or move by at least 1 pt
+    term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 1)
 
-term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 1000, 1)
+    video_output = video_output + "_" + str(counter_player) + ".avi" 
 
-while(1):
-    ret, frame = cap.read()
-    if not ret:
-        break
-   
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    height, width, _ = frame.shape #Dimension of the frame for write in new video
+    result = cv2.VideoWriter(video_output, cv2.VideoWriter_fourcc(*'XVID'), 25, (width, height)) 
 
-    for i, window in enumerate(tracking_windows):
-        dst = cv2.calcBackProject([hsv],[0],histograms[i],[0,180],1)
-        ret, window = cv2.CamShift(dst, window, term_crit)
-        
-        # Aggiorna la finestra di tracciamento
-        tracking_windows[i] = window
-        
-        # Disegna la finestra di tracciamento sul frame
-        pts = cv2.boxPoints(ret)
-        pts = np.int0(pts)
-        frame = cv2.polylines(frame, [pts], True, colors[i], 2)
+    while(1):
+        # Calculate elapsed time
+        elapsed_time = time.time() - start_time
 
-    cv2.imshow('Tracciamento Multi-Giocatore', frame)
-    if cv2.waitKey(30) & 0xff == 27:
-        break
+        # Print elapsed time
+        print(f"Elapsed Time: {elapsed_time:.2f} seconds", end="\r")
 
-print(" + COMPLETE : CAMShift.")
+        ret, frame = cap.read()
+        if ret == True:
+            workon = cv2.GaussianBlur(frame.copy(), (7,7), 0)
 
+            hsv = cv2.cvtColor(workon, cv2.COLOR_BGR2HSV)
+            dst = cv2.calcBackProject([hsv],[0],roi_hist,[0,180],1)
+
+            # apply camshift to get the new location
+            ret, track_window = cv2.CamShift(dst, track_window, term_crit)
+            _ , _ , wA, hA = track_window
+            
+            
+            if (wA * hA > MAX_AREA):
+                print("troppo grande")
+            elif (wA * hA < MIN_AREA):
+                print("troppo piccolo")
+            else:
+                print("giusto")
+            
+            '''
+            # Draw it on image
+            pts = cv2.boxPoints(ret)
+            pts = np.intp(pts)
+            img = cv2.polylines(frame,[pts],True, color, 2)
+
+            result.write(img)'''
+        else:
+            break
+    print("\n + COMPLETED.")
+    cap.release()
+    result.release()
 
