@@ -1,5 +1,6 @@
 '''
-This works for players hardcode 
+This code will take from the json, the coordinates of the bboxes.
+Track them with kalman and draw boxes with camshift.
 '''
 
 from utils import *
@@ -36,7 +37,6 @@ for obj in detected_objects:
     track_window = (obj['x'], obj['y'], obj['w'], obj['h'])
     color = obj['color']
     roi = frame[obj['y'] : obj['y'] + obj['h'], obj['x'] : obj['x'] + obj['w']]
-
     hsv_roi =  cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 
     #extract the color for the bbox
@@ -89,13 +89,14 @@ for obj in detected_objects:
                 print("troppo piccolo")
             else:
                 print("giusto")
-
+            
+            '''
             # Draw it on image
             pts = cv2.boxPoints(ret)
             pts = np.intp(pts)
             img = cv2.polylines(frame,[pts],True, color, 2)
 
-            result.write(img)
+            result.write(img)'''
         else:
             break
     print("\n + COMPLETED.")

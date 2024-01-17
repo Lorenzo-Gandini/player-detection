@@ -1,5 +1,5 @@
 '''
-This works for players hardcode 
+Given a json with the initial coordinates of the bounding boxes, this code run the Camshift for these bbox.
 '''
 
 from utils import *
@@ -25,7 +25,7 @@ detected_objects = extract_file()
 
 
 for obj in detected_objects:
-    video_output = "results/video/tracked-tr30-eps1-blur7/tracked-player"
+    video_output = "results/video/tracked-tr50-eps1-blur9/tracked-player"
     counter_player += 1
     
     print("\n + RUNNING :\nPlayer "+str(counter_player))
@@ -57,7 +57,7 @@ for obj in detected_objects:
     cv2.normalize(roi_hist,roi_hist,0,255,cv2.NORM_MINMAX)
 
     # Setup the termination criteria, either 10 iteration or move by at least 1 pt
-    term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 1)
+    term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 50, 1)
 
     video_output = video_output + "_" + str(counter_player) + ".avi" 
 
@@ -73,7 +73,7 @@ for obj in detected_objects:
 
         ret, frame = cap.read()
         if ret == True:
-            workon = cv2.GaussianBlur(frame.copy(), (7,7), 0)
+            workon = cv2.GaussianBlur(frame.copy(), (9,9), 0)
 
             hsv = cv2.cvtColor(workon, cv2.COLOR_BGR2HSV)
             dst = cv2.calcBackProject([hsv],[0],roi_hist,[0,180],1)
@@ -83,20 +83,19 @@ for obj in detected_objects:
             _ , _ , wA, hA = track_window
             
             
-            if (wA * hA > MAX_AREA):
+            '''if (wA * hA > MAX_AREA):
                 print("troppo grande")
             elif (wA * hA < MIN_AREA):
                 print("troppo piccolo")
             else:
-                print("giusto")
-            
-            '''
+                print("giusto")'''
+
             # Draw it on image
             pts = cv2.boxPoints(ret)
             pts = np.intp(pts)
             img = cv2.polylines(frame,[pts],True, color, 2)
 
-            result.write(img)'''
+            result.write(img)
         else:
             break
     print("\n + COMPLETED.")
