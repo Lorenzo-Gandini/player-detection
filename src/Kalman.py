@@ -6,7 +6,7 @@ Import the coords from json and implement Kalman
 from utils import *
 
 # Constants
-AREA_THRESHOLD = 5000
+AREA_THRESHOLD = 4000
 COLOR_RED = [0, 0, 255]
 COLOR_WHITE = [255, 255, 255]
 JSON_PATH = "results/json/players_detected.json"
@@ -16,7 +16,7 @@ def initialize_kalman_filter():
     kalman = cv2.KalmanFilter(4, 2)  # 4 state parameters (x, y, dx, dy), 2 measurement parameters (x, y)
     kalman.measurementMatrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], np.float32)
     kalman.transitionMatrix = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1]], np.float32)
-    kalman.processNoiseCov = np.eye(4, dtype=np.float32) * 0.001  # Tune this parameter
+    kalman.processNoiseCov = np.eye(4, dtype=np.float32) * 0.1  # Tune this parameter
     kalman.measurementNoiseCov = np.eye(2, dtype=np.float32) * 0.0001  # Tune this parameter
     return kalman
 
@@ -49,7 +49,7 @@ def is_tracking_reliable(track_window):
 def prepare_video_writer(frame, counter_player):
     # Prepare the video writer object
     height, width, _ = frame.shape
-    video_output = f"results/video/Kalman-000100001/tracked-player_{counter_player}.avi"
+    video_output = f"results/video/Kalman-0100001/tracked-player_{counter_player}.avi"
     return cv2.VideoWriter(video_output, cv2.VideoWriter_fourcc(*'XVID'), 25, (width, height))
 
 def initialize_tracking_objects(detected_obj, kalman):

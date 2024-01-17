@@ -33,8 +33,6 @@ blur_kernel = (15, 15) #Kernel da applicare per il denoising
 yellow_standard = np.array([255, 255, 0])
 red_standard = np.array([255, 0, 0])
 
-
-
 # ++++ Parameters for CAMShift
 # first interval of red (0-10)
 lower_red1 = np.array([0, 70, 50])

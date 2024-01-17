@@ -81,14 +81,6 @@ for obj in detected_objects:
             # apply camshift to get the new location
             ret, track_window = cv2.CamShift(dst, track_window, term_crit)
             _ , _ , wA, hA = track_window
-            
-            
-            '''if (wA * hA > MAX_AREA):
-                print("troppo grande")
-            elif (wA * hA < MIN_AREA):
-                print("troppo piccolo")
-            else:
-                print("giusto")'''
 
             # Draw it on image
             pts = cv2.boxPoints(ret)
