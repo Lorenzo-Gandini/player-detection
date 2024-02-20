@@ -1,3 +1,6 @@
 venv-player-detection/
 results/img/
 results/video/
+workflow.svg
+old-scripts/
+loaded-exam/
