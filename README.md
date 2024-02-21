@@ -3,7 +3,7 @@
 This project is part of the Signal, Image, and Video Processing course taught by Prof. Andrea Rosani for the academic year 2023/2024. Developed by Lorenzo Gandini.
 As an introduction to Computer Vision, my goal was to apply traditional methods (Histogram of Oriented Gradients, CAMShift and Kalman filters) to achieve the result. 
 
-If you want to discuss this project with me, free to write me an email ! :)
+If you want to discuss this project with me, free to write me an email! :)
 
 ## Introduction
 
