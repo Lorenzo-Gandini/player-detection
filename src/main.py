@@ -26,7 +26,7 @@ while frame_counter <= video_length:
     #First frame
     if frame_counter == 0:
         HOG.detect_players(frame, frame_counter, hog_tracking_list)
-        actual_player_id = klm.create_kalman(actual_player_id, frame_counter, kalman_tracking_list, hog_tracking_list)
+        actual_player_id = klm.create_kalman(frame, actual_player_id, frame_counter, kalman_tracking_list, hog_tracking_list)
         
         print(emoji.emojize (f":magnifying_glass_tilted_right: First detection in {round(time.time() - start_time, 2)} sec."))
         frame_counter += 1
@@ -36,8 +36,8 @@ while frame_counter <= video_length:
 
     #Run this for new detections    
     if frame_counter % 25 == 0:
-        klm.update_kalman(frame, frame_counter, kalman_tracking_list)
         HOG.detect_players(frame, frame_counter, hog_tracking_list)
+        klm.update_kalman(frame, frame_counter, kalman_tracking_list)
         actual_player_id = mtch.select_best_bounding_boxes(frame, frame_counter, actual_player_id, hog_tracking_list, kalman_tracking_list)
         print(emoji.emojize (f":magnifying_glass_tilted_right: Detecting new players in {round(time.time() - start_time, 2)} sec."))
         hog_tracking_list = []
@@ -45,7 +45,7 @@ while frame_counter <= video_length:
     #Update the position of players with trackers
     else:
         klm.update_kalman(frame, frame_counter, kalman_tracking_list)
-        if (frame_counter - 5) % 25 == 0:  
+        if (frame_counter - 5 ) % 25 == 0:  
             check_false_positive(frame_counter, kalman_tracking_list)
         print(emoji.emojize (f":soccer_ball: Tracking execute in {round(time.time() - start_time, 2)} sec."))
 

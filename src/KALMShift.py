@@ -3,7 +3,7 @@ KALMShift (Kalman filter + CAMShift) 's operations.
 '''
 
 from utilities import *
-from functions import load_bboxes_by_frame, append_box, get_roi_hist
+from functions import load_bboxes_by_frame, append_box, get_roi_hist, analyze_color_statistics
 
 def initialize_kalman_filter():
     '''
@@ -105,11 +105,12 @@ def process_frame(frame, roi_hist, track_window, kalman):
 
     return new_track_window
 
-def create_kalman(frame_number, actual_player_id, kalman_tracking_list, hog_tracking_list):
+def create_kalman(frame, frame_number, actual_player_id, kalman_tracking_list, hog_tracking_list):
     '''
     Function that manage all the function in order to create a new kalman filter for a given bounding box.    
     
     Args:
+    frame : the image
     frame_number : The number of the frame under observation
     actual_player_id : the last id
     kalman_tracking_list : The list that works as memory with all the bounding boxes tracked in every frame.
@@ -122,8 +123,10 @@ def create_kalman(frame_number, actual_player_id, kalman_tracking_list, hog_trac
     bboxes = load_bboxes_by_frame(frame_number, hog_tracking_list)
 
     for bbox in bboxes:
-        bbox_color = bbox["color"]
-        
+        bbox_coords = bbox["coords"]
+        roi = frame[ bbox_coords['x']:bbox_coords['x']+ bbox_coords['w'],  bbox_coords['y']: bbox_coords['y']+ bbox_coords['h']]
+        bbox_color = analyze_color_statistics(roi)
+       
         kalman = initialize_kalman_filter()
         initialize_tracking_objects(bbox['coords'], kalman)
         kalman_filters[actual_player_id] = kalman
@@ -148,14 +151,16 @@ def update_kalman(frame, frame_counter, kalman_tracking_list):
     for bbox in previous_bboxes:
         bbox_id = bbox["id"]
         bbox_coords = bbox["coords"]
-        bbox_color = bbox["color"]
+        init_x, init_y, init_w, init_h = bbox_coords['x'], bbox_coords['y'], bbox_coords['w'], bbox_coords['h']
+        roi = frame[init_y:init_y + init_h, init_x:init_x + init_w]
+        bbox_color = analyze_color_statistics(roi)
 
         if bbox_id in kalman_filters:
             kalman = kalman_filters[bbox_id]
 
-            init_x, init_y, init_w, init_h = bbox_coords['x'], bbox_coords['y'], bbox_coords['w'], bbox_coords['h']
+            #init_x, init_y, init_w, init_h = bbox_coords['x'], bbox_coords['y'], bbox_coords['w'], bbox_coords['h']
 
-            roi = frame[init_y:init_y + init_h, init_x:init_x + init_w]
+            #roi = frame[init_y:init_y + init_h, init_x:init_x + init_w]
             roi_hist = get_roi_hist(roi, bbox_color)
             track_window = (init_x, init_y, init_w, init_h)
 

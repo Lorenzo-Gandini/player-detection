@@ -24,8 +24,8 @@ kalman_tracking_list = []
 frame_counter = 0
 actual_player_id = 0
 area_treshold = 6000
-centroid_threshold = 100  
-iou_threshold = 0.75 
+centroid_threshold = 10  
+iou_threshold = 0.95 
 
 #Parameters for HOG
 hog_winstride = (4,4)
