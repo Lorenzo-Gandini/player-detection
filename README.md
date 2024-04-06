@@ -4,11 +4,12 @@
 This project is part of the Signal, Image, and Video course taught by Prof. Andrea Rosani for the academic year 2023/2024. 
 As an introduction course to Computer Vision, my goal was to apply traditional methods like Histogram of Oriented Gradients, CAMShift and Kalman filters, to identify and track with colored (with the team color) bounding boxes all football players in a selected video.
 
+It is far from perfect, as you can see in the final result below, but I really enjoyed taking the first step into the field of CV applied to sport.
+
 If you want to understand my development process and the problems I encountered, this is the [report](report.pdf) .
 Feel free to write me an [email](mailto:lorenzo.gandini@hotmail.it) if you want to discuss some points or suggest upgrades. 
 
 https://github.com/Lorenzo-Gandini/player-detection/assets/64914278/43063ba2-5eec-4fe0-8bae-a272777ff538
-
 
 
 ## How use it
