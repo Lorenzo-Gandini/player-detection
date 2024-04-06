@@ -1,15 +1,12 @@
 # Player Detection
 
-This project is part of the Signal, Image, and Video Processing course taught by Prof. Andrea Rosani for the academic year 2023/2024. Developed by Lorenzo Gandini.
-As an introduction to Computer Vision, my goal was to apply traditional methods (Histogram of Oriented Gradients, CAMShift and Kalman filters) to achieve the result. 
-
-If you want to discuss this project with me, free to write me an email! :)
-
 ## Introduction
+This project is part of the Signal, Image, and Video course taught by Prof. Andrea Rosani for the academic year 2023/2024. 
+As an introduction course to Computer Vision, my goal was to apply traditional methods like Histogram of Oriented Gradients, CAMShift and Kalman filters, to identify and track with colored (with the team color) bounding boxes all football players in a selected video.
 
-This repository contains a Python application designed to detect players in a selected video file and track their movements by drawing bounding boxes around them.
+If you want to discuss this project with me, or want to suggest upgrades, free to write me an email !
 
-## Getting Started
+## How use it
 
 ### Prerequisites
 
